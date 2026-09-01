@@ -12,6 +12,31 @@ const PORT = process.env.PORT || 3000;
 const OPENROUTER_API_KEY =
   process.env.OPENROUTER_API_KEY || "";
 
+const SLIDES_OPENROUTER_API_KEY =
+  process.env.SLIDES_OPENROUTER_API_KEY || "";
+
+const NOTES_OPENROUTER_API_KEY =
+  process.env.NOTES_OPENROUTER_API_KEY || "";
+
+const BITS_OPENROUTER_API_KEY =
+  process.env.BITS_OPENROUTER_API_KEY || "";
+
+function getOpenRouterApiKey(contentType) {
+  if (contentType === "slides") {
+    return SLIDES_OPENROUTER_API_KEY;
+  }
+
+  if (contentType === "notes") {
+    return NOTES_OPENROUTER_API_KEY;
+  }
+
+  if (contentType === "bits") {
+    return BITS_OPENROUTER_API_KEY;
+  }
+
+  return OPENROUTER_API_KEY;
+}
+
 const OPENROUTER_MODEL =
   process.env.OPENROUTER_MODEL || "openrouter/free";
 
