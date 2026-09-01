@@ -21,7 +21,15 @@ const NOTES_OPENROUTER_API_KEY =
 const BITS_OPENROUTER_API_KEY =
   process.env.BITS_OPENROUTER_API_KEY || "";
 
+const OPENROUTER_MODEL =
+  process.env.OPENROUTER_MODEL || "openrouter/free";
+
+const SITE_URL =
+  process.env.SITE_URL || "https://trivoxaiimpact.com";
+
+
 function getOpenRouterApiKey(contentType) {
+
   if (contentType === "slides") {
     return SLIDES_OPENROUTER_API_KEY;
   }
@@ -37,11 +45,6 @@ function getOpenRouterApiKey(contentType) {
   return OPENROUTER_API_KEY;
 }
 
-const OPENROUTER_MODEL =
-  process.env.OPENROUTER_MODEL || "openrouter/free";
-
-const SITE_URL =
-  process.env.SITE_URL || "https://trivoxaiimpact.com";
 
 const REQUEST_TIMEOUT_MS = 45000;
 const MAX_AI_ATTEMPTS = 3;
@@ -64,7 +67,9 @@ const allowedOrigins = [
 app.use(
   cors({
     origin(origin, callback) {
-      // Allow server-to-server, curl, Postman, direct browser navigation.
+
+      // Allow server-to-server, curl, Postman,
+      // direct browser navigation.
       if (!origin) {
         return callback(null, true);
       }
@@ -73,14 +78,23 @@ app.use(
         return callback(null, true);
       }
 
-      console.warn("Blocked CORS origin:", origin);
+      console.warn(
+        "Blocked CORS origin:",
+        origin
+      );
 
       return callback(
-        new Error(`CORS blocked for origin: ${origin}`)
+        new Error(
+          `CORS blocked for origin: ${origin}`
+        )
       );
     },
 
-    methods: ["GET", "POST", "OPTIONS"],
+    methods: [
+      "GET",
+      "POST",
+      "OPTIONS"
+    ],
 
     allowedHeaders: [
       "Content-Type",
@@ -103,22 +117,28 @@ app.use(
    REQUEST LOG
 ========================================================= */
 
-app.use((req, res, next) => {
-  console.log(
-    `[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`
-  );
+app.use(
+  (req, res, next) => {
 
-  next();
-});
+    console.log(
+      `[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`
+    );
+
+    next();
+  }
+);
 
 
 /* =========================================================
    MEMORY CACHE
 ========================================================= */
 
-const aiCache = new Map();
+const aiCache =
+  new Map();
+
 
 function createCacheKey(data) {
+
   return [
     data.contentType || "",
     data.courseTitle || "",
@@ -126,31 +146,54 @@ function createCacheKey(data) {
     data.qualification || "",
     data.language || "English"
   ]
-    .map(value => String(value).trim().toLowerCase())
+    .map(
+      value =>
+        String(value)
+          .trim()
+          .toLowerCase()
+    )
     .join("|");
 }
 
-function getCachedResult(key) {
-  const cached = aiCache.get(key);
 
-  if (!cached) return null;
+function getCachedResult(key) {
+
+  const cached =
+    aiCache.get(key);
+
+  if (!cached) {
+    return null;
+  }
 
   if (
-    Date.now() - cached.createdAt >
+    Date.now() -
+      cached.createdAt >
     CACHE_TIME_MS
   ) {
+
     aiCache.delete(key);
+
     return null;
   }
 
   return cached.data;
 }
 
-function saveCache(key, data) {
-  aiCache.set(key, {
-    createdAt: Date.now(),
-    data
-  });
+
+function saveCache(
+  key,
+  data
+) {
+
+  aiCache.set(
+    key,
+    {
+      createdAt:
+        Date.now(),
+
+      data
+    }
+  );
 }
 
 
@@ -467,10 +510,19 @@ The response must be directly parseable using JSON.parse().
    SAFE INPUT
 ========================================================= */
 
-function safeText(value, fallback = "") {
-  return String(value ?? fallback)
+function safeText(
+  value,
+  fallback = ""
+) {
+
+  return String(
+    value ?? fallback
+  )
     .trim()
-    .slice(0, 300);
+    .slice(
+      0,
+      300
+    );
 }
 
 
@@ -485,17 +537,25 @@ function buildPrompt({
   qualification,
   language
 }) {
+
   const safeCourse =
-    safeText(courseTitle);
+    safeText(
+      courseTitle
+    );
+
 
   const safeSection =
-    safeText(sectionTitle);
+    safeText(
+      sectionTitle
+    );
+
 
   const safeQualification =
     safeText(
       qualification,
       "General Student"
     );
+
 
   const safeLanguage =
     safeText(
@@ -504,7 +564,11 @@ function buildPrompt({
     );
 
 
-  if (contentType === "slides") {
+  if (
+    contentType ===
+      "slides"
+  ) {
+
     return `
 TASK:
 Generate the SLIDES for one TRIVOXAI course section.
@@ -553,7 +617,11 @@ STRICT RULES:
   }
 
 
-  if (contentType === "notes") {
+  if (
+    contentType ===
+      "notes"
+  ) {
+
     return `
 TASK:
 Generate professional Reading Material / Notes
@@ -610,7 +678,11 @@ STRICT RULES:
   }
 
 
-  if (contentType === "bits") {
+  if (
+    contentType ===
+      "bits"
+  ) {
+
     return `
 TASK:
 Generate the final 25 Bits Assessment
@@ -662,6 +734,7 @@ STRICT RULES:
 `;
   }
 
+
   throw new Error(
     "Invalid content type"
   );
@@ -673,31 +746,52 @@ STRICT RULES:
 ========================================================= */
 
 function cleanAIJSON(text) {
-  let clean =
-    String(text || "").trim();
 
-  clean = clean
-    .replace(/^```json\s*/i, "")
-    .replace(/^```\s*/i, "")
-    .replace(/\s*```$/i, "")
-    .trim();
+  let clean =
+    String(
+      text || ""
+    ).trim();
+
+
+  clean =
+    clean
+      .replace(
+        /^```json\s*/i,
+        ""
+      )
+      .replace(
+        /^```\s*/i,
+        ""
+      )
+      .replace(
+        /\s*```$/i,
+        ""
+      )
+      .trim();
+
 
   const firstBrace =
     clean.indexOf("{");
 
+
   const lastBrace =
     clean.lastIndexOf("}");
+
 
   if (
     firstBrace !== -1 &&
     lastBrace !== -1 &&
-    lastBrace > firstBrace
+    lastBrace >
+      firstBrace
   ) {
-    clean = clean.slice(
-      firstBrace,
-      lastBrace + 1
-    );
+
+    clean =
+      clean.slice(
+        firstBrace,
+        lastBrace + 1
+      );
   }
+
 
   return clean;
 }
@@ -709,96 +803,152 @@ function cleanAIJSON(text) {
 
 async function callOpenRouter(
   prompt,
+  contentType,
   attempt = 1
 ) {
-  if (!OPENROUTER_API_KEY) {
-    throw new Error(
-      "OPENROUTER_API_KEY is missing in Render Environment Variables."
+
+  const apiKey =
+    getOpenRouterApiKey(
+      contentType
     );
+
+
+  if (!apiKey) {
+
+    throw new Error(
+      `${String(
+        contentType ||
+          "OPENROUTER"
+      ).toUpperCase()} API key is missing in Render Environment Variables.`
+    );
+
   }
+
 
   const controller =
     new AbortController();
 
+
   const timeout =
     setTimeout(
-      () => controller.abort(),
+      () =>
+        controller.abort(),
       REQUEST_TIMEOUT_MS
     );
 
+
   try {
-    const response = await fetch(
-      "https://openrouter.ai/api/v1/chat/completions",
-      {
-        method: "POST",
 
-        signal:
-          controller.signal,
+    const response =
+      await fetch(
+        "https://openrouter.ai/api/v1/chat/completions",
+        {
 
-        headers: {
-          Authorization:
-            `Bearer ${OPENROUTER_API_KEY}`,
+          method:
+            "POST",
 
-          "Content-Type":
-            "application/json",
 
-          "HTTP-Referer":
-            SITE_URL,
+          signal:
+            controller.signal,
 
-          "X-Title":
-            "TRIVOXAI IMPACT"
-        },
 
-        body: JSON.stringify({
-          model:
-            OPENROUTER_MODEL,
+          headers: {
 
-          messages: [
-            {
-              role:
-                "system",
+            Authorization:
+              `Bearer ${apiKey}`,
 
-              content:
-                MASTER_SYSTEM_PROMPT
-            },
-            {
-              role:
-                "user",
 
-              content:
-                prompt
-            }
-          ],
+            "Content-Type":
+              "application/json",
 
-          temperature:
-            0.25,
 
-          max_tokens:
-            8000
-        })
-      }
-    );
+            "HTTP-Referer":
+              SITE_URL,
+
+
+            "X-Title":
+              "TRIVOXAI IMPACT"
+
+          },
+
+
+          body:
+            JSON.stringify({
+
+              model:
+                OPENROUTER_MODEL,
+
+
+              messages: [
+
+                {
+                  role:
+                    "system",
+
+                  content:
+                    MASTER_SYSTEM_PROMPT
+                },
+
+                {
+                  role:
+                    "user",
+
+                  content:
+                    prompt
+                }
+
+              ],
+
+
+              temperature:
+                0.25,
+
+
+              max_tokens:
+                8000
+
+            })
+
+        }
+      );
+
 
     const rawText =
       await response.text();
 
+
     let data = null;
 
+
     try {
+
       data =
-        JSON.parse(rawText);
+        JSON.parse(
+          rawText
+        );
+
     } catch {
+
       console.error(
         "OpenRouter non-JSON response:",
-        rawText.slice(0, 1000)
+        rawText.slice(
+          0,
+          1000
+        )
       );
+
     }
 
-    if (!response.ok) {
+
+    if (
+      !response.ok
+    ) {
+
       const message =
         data?.error?.message ||
         rawText ||
         `OpenRouter HTTP ${response.status}`;
+
 
       console.error(
         "OpenRouter Error:",
@@ -806,74 +956,114 @@ async function callOpenRouter(
         message
       );
 
+
       const retryable =
-        response.status === 408 ||
-        response.status === 409 ||
-        response.status === 429 ||
-        response.status >= 500;
+        response.status ===
+          408 ||
+        response.status ===
+          409 ||
+        response.status ===
+          429 ||
+        response.status >=
+          500;
+
 
       if (
         retryable &&
-        attempt < MAX_AI_ATTEMPTS
+        attempt <
+          MAX_AI_ATTEMPTS
       ) {
+
         await new Promise(
           resolve =>
             setTimeout(
               resolve,
-              attempt * 1500
+              attempt *
+                1500
             )
         );
 
+
         return callOpenRouter(
           prompt,
+          contentType,
           attempt + 1
         );
+
       }
 
-      throw new Error(message);
+
+      throw new Error(
+        message
+      );
     }
+
 
     const content =
       data?.choices?.[0]
         ?.message?.content;
 
+
     if (!content) {
+
       if (
         attempt <
-        MAX_AI_ATTEMPTS
+          MAX_AI_ATTEMPTS
       ) {
+
         return callOpenRouter(
           prompt,
+          contentType,
           attempt + 1
         );
+
       }
+
 
       throw new Error(
         "OpenRouter returned an empty response."
       );
     }
 
+
     return content;
+
+
   } catch (error) {
+
+
     if (
       error.name ===
         "AbortError" &&
       attempt <
         MAX_AI_ATTEMPTS
     ) {
+
       console.warn(
-        `OpenRouter timeout. Retry ${attempt + 1}/${MAX_AI_ATTEMPTS}`
+        `OpenRouter timeout. Retry ${
+          attempt + 1
+        }/${MAX_AI_ATTEMPTS}`
       );
+
 
       return callOpenRouter(
         prompt,
+        contentType,
         attempt + 1
       );
+
     }
 
+
     throw error;
+
+
   } finally {
-    clearTimeout(timeout);
+
+    clearTimeout(
+      timeout
+    );
+
   }
 }
 
@@ -882,67 +1072,126 @@ async function callOpenRouter(
    CONTENT VALIDATION
 ========================================================= */
 
-function validateSlides(result) {
+function validateSlides(
+  result
+) {
+
   if (
     !result ||
-    !Array.isArray(result.slides) ||
-    result.slides.length !== 8
+    !Array.isArray(
+      result.slides
+    ) ||
+    result.slides.length !==
+      8
   ) {
+
     return false;
   }
 
+
   return result.slides.every(
-    (slide, index) => {
+    (
+      slide,
+      index
+    ) => {
+
       return (
-        Number(slide.slideNumber) ===
+
+        Number(
+          slide.slideNumber
+        ) ===
           index + 1 &&
+
+
         typeof slide.title ===
           "string" &&
-        slide.title.trim().length > 0 &&
+
+
+        slide.title
+          .trim()
+          .length >
+          0 &&
+
+
         Array.isArray(
           slide.points
         ) &&
-        slide.points.length >= 3 &&
-        slide.points.length <= 5
+
+
+        slide.points.length >=
+          3 &&
+
+
+        slide.points.length <=
+          5
+
       );
+
     }
   );
 }
 
-function validateNotes(result) {
+
+function validateNotes(
+  result
+) {
+
   return Boolean(
+
     result &&
-      typeof result.title ===
-        "string" &&
-      typeof result.introduction ===
-        "string" &&
-      Array.isArray(
-        result.sections
-      ) &&
-      result.sections.length >= 4 &&
-      result.sections.length <= 6 &&
-      result.example &&
-      Array.isArray(
-        result.keyPoints
-      ) &&
-      result.keyPoints.length >= 4 &&
-      Array.isArray(
-        result.revision
-      ) &&
-      result.revision.length >= 4
+
+    typeof result.title ===
+      "string" &&
+
+    typeof result.introduction ===
+      "string" &&
+
+    Array.isArray(
+      result.sections
+    ) &&
+
+    result.sections.length >=
+      4 &&
+
+    result.sections.length <=
+      6 &&
+
+    result.example &&
+
+    Array.isArray(
+      result.keyPoints
+    ) &&
+
+    result.keyPoints.length >=
+      4 &&
+
+    Array.isArray(
+      result.revision
+    ) &&
+
+    result.revision.length >=
+      4
+
   );
 }
 
-function validateBits(result) {
+
+function validateBits(
+  result
+) {
+
   if (
     !result ||
     !Array.isArray(
       result.questions
     ) ||
-    result.questions.length !== 25
+    result.questions.length !==
+      25
   ) {
+
     return false;
   }
+
 
   const allowedAnswers =
     new Set([
@@ -952,84 +1201,121 @@ function validateBits(result) {
       "D"
     ]);
 
+
   const normalizedQuestions =
     new Set();
+
 
   for (
     let i = 0;
     i <
-    result.questions.length;
+      result.questions.length;
     i++
   ) {
+
     const item =
       result.questions[i];
 
+
     if (
-      Number(item.number) !== i + 1 ||
+
+      Number(
+        item.number
+      ) !==
+        i + 1 ||
+
       !item.question ||
+
       !item.options ||
+
       !item.options.A ||
+
       !item.options.B ||
+
       !item.options.C ||
+
       !item.options.D ||
+
       !allowedAnswers.has(
         String(
           item.correctAnswer
         ).toUpperCase()
       ) ||
+
       !item.explanation
+
     ) {
+
       return false;
     }
 
+
     const normalized =
-      String(item.question)
+      String(
+        item.question
+      )
         .trim()
         .toLowerCase();
+
 
     if (
       normalizedQuestions.has(
         normalized
       )
     ) {
+
       return false;
     }
+
 
     normalizedQuestions.add(
       normalized
     );
+
   }
+
 
   return true;
 }
+
 
 function validateGeneratedContent(
   type,
   result
 ) {
+
   if (
-    type === "slides"
+    type ===
+      "slides"
   ) {
+
     return validateSlides(
       result
     );
   }
 
+
   if (
-    type === "notes"
+    type ===
+      "notes"
   ) {
+
     return validateNotes(
       result
     );
   }
 
+
   if (
-    type === "bits"
+    type ===
+      "bits"
   ) {
+
     return validateBits(
       result
     );
   }
+
 
   return false;
 }
@@ -1043,29 +1329,38 @@ async function generateValidatedContent(
   contentType,
   prompt
 ) {
-  let lastError = null;
+
+  let lastError =
+    null;
+
 
   for (
     let attempt = 1;
     attempt <=
-    MAX_AI_ATTEMPTS;
+      MAX_AI_ATTEMPTS;
     attempt++
   ) {
+
     try {
+
       const aiText =
         await callOpenRouter(
-          prompt
+          prompt,
+          contentType
         );
+
 
       const cleaned =
         cleanAIJSON(
           aiText
         );
 
+
       const parsed =
         JSON.parse(
           cleaned
         );
+
 
       if (
         validateGeneratedContent(
@@ -1073,22 +1368,31 @@ async function generateValidatedContent(
           parsed
         )
       ) {
+
         return parsed;
       }
+
 
       lastError =
         new Error(
           "Generated content did not match the required structure."
         );
+
+
     } catch (error) {
-      lastError = error;
+
+      lastError =
+        error;
+
 
       console.warn(
         `Generation validation attempt ${attempt} failed:`,
         error.message
       );
+
     }
   }
+
 
   throw (
     lastError ||
@@ -1103,45 +1407,76 @@ async function generateValidatedContent(
    ROOT / HEALTH ROUTES
 ========================================================= */
 
-app.get("/", (req, res) => {
-  return res
-    .status(200)
-    .json({
-      success: true,
-      service:
-        "TRIVOXAI IMPACT AI Server",
-      status:
-        "running",
-      model:
-        OPENROUTER_MODEL,
-      endpoints: {
-        health:
-          "GET /api/health",
-        courseAI:
-          "POST /api/course-ai"
-      }
-    });
-});
+app.get(
+  "/",
+  (req, res) => {
+
+    return res
+      .status(200)
+      .json({
+
+        success:
+          true,
+
+
+        service:
+          "TRIVOXAI IMPACT AI Server",
+
+
+        status:
+          "running",
+
+
+        model:
+          OPENROUTER_MODEL,
+
+
+        endpoints: {
+
+          health:
+            "GET /api/health",
+
+          courseAI:
+            "POST /api/course-ai"
+
+        }
+
+      });
+  }
+);
 
 
 app.get(
   "/api/health",
   (req, res) => {
+
     return res
       .status(200)
       .json({
-        success: true,
+
+        success:
+          true,
+
+
         status:
           "healthy",
+
+
         apiKeyConfigured:
           Boolean(
             OPENROUTER_API_KEY
           ),
+
+
         model:
           OPENROUTER_MODEL,
+
+
         cacheEntries:
           aiCache.size
+
       });
+
   }
 );
 
@@ -1154,19 +1489,30 @@ async function courseAIHandler(
   req,
   res
 ) {
+
   try {
+
     const {
+
       contentType,
+
       courseTitle,
+
       sectionTitle,
+
       qualification,
+
       language
-    } = req.body || {};
+
+    } =
+      req.body || {};
+
 
     const type =
       safeText(
         contentType
       ).toLowerCase();
+
 
     const allowedTypes = [
       "slides",
@@ -1174,89 +1520,142 @@ async function courseAIHandler(
       "bits"
     ];
 
+
     if (
       !allowedTypes.includes(
         type
       )
     ) {
+
       return res
         .status(400)
         .json({
-          success: false,
+
+          success:
+            false,
+
+
           error:
             "contentType must be slides, notes or bits."
+
         });
     }
 
+
     if (
+
       !safeText(
         courseTitle
       ) ||
+
       !safeText(
         sectionTitle
       )
+
     ) {
+
       return res
         .status(400)
         .json({
-          success: false,
+
+          success:
+            false,
+
+
           error:
             "courseTitle and sectionTitle are required."
+
         });
+
     }
 
+
     const requestData = {
+
       contentType:
         type,
+
+
       courseTitle:
         safeText(
           courseTitle
         ),
+
+
       sectionTitle:
         safeText(
           sectionTitle
         ),
+
+
       qualification:
         safeText(
           qualification,
           "General Student"
         ),
+
+
       language:
         safeText(
           language,
           "English"
         )
+
     };
+
 
     const cacheKey =
       createCacheKey(
         requestData
       );
 
+
     const cached =
       getCachedResult(
         cacheKey
       );
 
+
     if (cached) {
+
       return res.json({
-        success: true,
-        cached: true,
+
+        success:
+          true,
+
+
+        cached:
+          true,
+
+
         type:
-          requestData.contentType,
+          requestData
+            .contentType,
+
+
         course:
-          requestData.courseTitle,
+          requestData
+            .courseTitle,
+
+
         section:
-          requestData.sectionTitle,
+          requestData
+            .sectionTitle,
+
+
         data:
           cached
+
       });
+
     }
+
 
     const prompt =
       buildPrompt(
         requestData
       );
+
 
     const generated =
       await generateValidatedContent(
@@ -1264,48 +1663,82 @@ async function courseAIHandler(
         prompt
       );
 
+
     saveCache(
       cacheKey,
       generated
     );
 
+
     return res.json({
-      success: true,
-      cached: false,
+
+      success:
+        true,
+
+
+      cached:
+        false,
+
+
       type:
-        requestData.contentType,
+        requestData
+          .contentType,
+
+
       course:
-        requestData.courseTitle,
+        requestData
+          .courseTitle,
+
+
       section:
-        requestData.sectionTitle,
+        requestData
+          .sectionTitle,
+
+
       data:
         generated
+
     });
+
+
   } catch (error) {
+
+
     console.error(
       "Course AI Error:",
       error
     );
 
+
     return res
       .status(500)
       .json({
-        success: false,
+
+        success:
+          false,
+
+
         error:
           "Unable to generate course content right now.",
+
+
         details:
           process.env.NODE_ENV ===
-          "production"
+            "production"
             ? undefined
             : error.message
+
       });
+
   }
 }
+
 
 app.post(
   "/api/course-ai",
   courseAIHandler
 );
+
 
 // Extra alias so accidental trailing/alternate path still works.
 app.post(
@@ -1322,13 +1755,21 @@ app.post(
 app.post(
   "/api/cache/clear",
   (req, res) => {
+
     aiCache.clear();
 
+
     return res.json({
-      success: true,
+
+      success:
+        true,
+
+
       message:
         "AI memory cache cleared."
+
     });
+
   }
 );
 
@@ -1344,34 +1785,54 @@ app.use(
     res,
     next
   ) => {
+
+
     console.error(
       "Express Error:",
       error
     );
 
+
     if (
+
       String(
-        error?.message || ""
+        error?.message ||
+          ""
       ).startsWith(
         "CORS blocked"
       )
+
     ) {
+
       return res
         .status(403)
         .json({
-          success: false,
+
+          success:
+            false,
+
+
           error:
             "CORS origin not allowed."
+
         });
+
     }
+
 
     return res
       .status(500)
       .json({
-        success: false,
+
+        success:
+          false,
+
+
         error:
           "Server error."
+
       });
+
   }
 );
 
@@ -1380,19 +1841,32 @@ app.use(
    404 - MUST STAY AFTER ALL ROUTES
 ========================================================= */
 
-app.use((req, res) => {
-  return res
-    .status(404)
-    .json({
-      success: false,
-      error:
-        "Route not found",
-      method:
-        req.method,
-      path:
-        req.originalUrl
-    });
-});
+app.use(
+  (req, res) => {
+
+    return res
+      .status(404)
+      .json({
+
+        success:
+          false,
+
+
+        error:
+          "Route not found",
+
+
+        method:
+          req.method,
+
+
+        path:
+          req.originalUrl
+
+      });
+
+  }
+);
 
 
 /* =========================================================
@@ -1403,18 +1877,22 @@ app.listen(
   PORT,
   "0.0.0.0",
   () => {
+
     console.log(
       `TRIVOXAI IMPACT AI Server running on port ${PORT}`
     );
 
+
     console.log(
       `Model: ${OPENROUTER_MODEL}`
     );
+
 
     console.log(
       `API key configured: ${Boolean(
         OPENROUTER_API_KEY
       )}`
     );
+
   }
 );
